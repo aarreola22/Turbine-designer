@@ -131,60 +131,76 @@ if p:
 
 
 # ── 3D Export ─────────────────────────────────────────────────────────────────
+try:
+    import cadquery as _cq
+    HAS_CADQUERY = True
+except ImportError:
+    HAS_CADQUERY = False
+
 if p:
     st.divider()
     st.subheader("3D Model Export")
-    st.caption("Generates a solid model of the runner (blades + end discs + shaft). "
-               "STEP opens in SolidWorks or Fusion 360; STL opens in Blender or goes to a 3D printer.")
 
-    ec1, ec2, _ = st.columns([1, 1, 2])
-    with ec1:
-        blade_thick = st.number_input("Blade thickness (mm)", 1.0, 15.0, 3.0, 0.5)
-    with ec2:
-        shaft_r = st.number_input("Shaft radius (mm)", 5.0, 150.0, 20.0, 5.0)
-
-    if st.button("Generate 3D Runner", type="secondary"):
-        with st.spinner("Building geometry — this takes about 30–90 seconds…"):
-            try:
-                from geometry import build_runner, export_step, export_stl
-
-                runner = build_runner(
-                    p,
-                    blade_thickness_mm=blade_thick,
-                    shaft_radius_mm=shaft_r,
-                )
-
-                with tempfile.NamedTemporaryFile(suffix=".step", delete=False) as f:
-                    step_path = f.name
-                with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as f:
-                    stl_path = f.name
-
-                export_step(runner, step_path)
-                export_stl(runner, stl_path)
-
-                st.session_state.step_bytes = Path(step_path).read_bytes()
-                st.session_state.stl_bytes  = Path(stl_path).read_bytes()
-                st.session_state.model_ready = True
-                st.success("3D model ready — click a button below to download.")
-
-            except ImportError as exc:
-                st.error(f"CadQuery not available: {exc}")
-            except Exception as exc:
-                st.error(f"Geometry error: {exc}")
-
-    if st.session_state.get("model_ready"):
-        dc1, dc2, _ = st.columns([1, 1, 2])
-        dc1.download_button(
-            "⬇ Download STEP",
-            data=st.session_state.step_bytes,
-            file_name="runner.step",
-            mime="application/octet-stream",
-            use_container_width=True,
+    if not HAS_CADQUERY:
+        st.info(
+            "**3D export is available in the desktop version.**\n\n"
+            "Install [Docker Desktop](https://www.docker.com/products/docker-desktop), "
+            "then run:\n\n"
+            "```\ndocker run -p 8501:8501 anarreol/turbine-designer\n```\n\n"
+            "Open `http://localhost:8501` in your browser to get the full app with STEP and STL download."
         )
-        dc2.download_button(
-            "⬇ Download STL",
-            data=st.session_state.stl_bytes,
-            file_name="runner.stl",
-            mime="application/octet-stream",
-            use_container_width=True,
+    else:
+        st.caption("Generates a solid model of the runner (blades + end discs + shaft). "
+                   "STEP opens in SolidWorks or Fusion 360; STL opens in Blender or goes to a 3D printer.")
+
+        ec1, ec2, _ = st.columns([1, 1, 2])
+        with ec1:
+            blade_thick = st.number_input("Blade thickness (mm)", 1.0, 15.0, 3.0, 0.5)
+        with ec2:
+            shaft_r = st.number_input("Shaft radius (mm)", 5.0, 150.0, 20.0, 5.0)
+
+        if st.button("Generate 3D Runner", type="secondary"):
+            with st.spinner("Building geometry — this takes about 30–90 seconds…"):
+                try:
+                    from geometry import build_runner, export_step, export_stl
+
+                    runner = build_runner(
+                        p,
+                        blade_thickness_mm=blade_thick,
+                        shaft_radius_mm=shaft_r,
+                    )
+
+                    with tempfile.NamedTemporaryFile(suffix=".step", delete=False) as f:
+                        step_path = f.name
+                    with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as f:
+                        stl_path = f.name
+
+                    export_step(runner, step_path)
+                    export_stl(runner, stl_path)
+
+                    st.session_state.step_bytes = Path(step_path).read_bytes()
+                    st.session_state.stl_bytes  = Path(stl_path).read_bytes()
+                    st.session_state.model_ready = True
+                    st.success("3D model ready — click a button below to download.")
+
+                except ImportError as exc:
+                    st.error(f"CadQuery not available: {exc}")
+                except Exception as exc:
+                    st.error(f"Geometry error: {exc}")
+
+        if st.session_state.get("model_ready"):
+            dc1, dc2, _ = st.columns([1, 1, 2])
+            dc1.download_button(
+                "⬇ Download STEP",
+                data=st.session_state.step_bytes,
+                file_name="runner.step",
+                mime="application/octet-stream",
+                use_container_width=True,
+            )
+            dc2.download_button(
+                "⬇ Download STL",
+                data=st.session_state.stl_bytes,
+                file_name="runner.stl",
+                mime="application/octet-stream",
+                use_container_width=True,
         )

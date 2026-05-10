@@ -6,7 +6,6 @@ Run with:
   streamlit run app.py
 """
 
-import math
 import tempfile
 from pathlib import Path
 
@@ -52,10 +51,8 @@ with left:
     with st.expander("Advanced settings"):
         eta = st.slider("Efficiency estimate", 0.60, 0.92, 0.80, 0.01,
                         help="Used for the power estimate only")
-        alpha_deg = st.slider("Nozzle jet angle α (°)", 10, 30, 16,
-                              help="Angle of the jet to the runner tangent — 16° is optimal")
-        nozzle_arc = st.slider("Nozzle throat arc (°)", 20, 50, 30,
-                               help="Effective throat opening angle — smaller = wider runner")
+        alpha_deg = st.slider("Nozzle jet angle α (°)", 16, 30, 22,
+                              help="Angle of the jet to the runner tangent — 22° is optimal (Quaranta 2022)")
 
     st.button("Calculate", type="primary", use_container_width=True, key="calc_btn")
 
@@ -68,7 +65,6 @@ if run_calc:
         H=H, Q=Q,
         eta_assumed=eta,
         alpha_deg=alpha_deg,
-        nozzle_arc_deg=nozzle_arc,
     )
     st.session_state.model_ready = False
 
@@ -125,8 +121,8 @@ if p:
         # ── Nozzle ────────────────────────────────────────────────────────────
         st.markdown("**Nozzle**")
         _table([
-            ("Nozzle width  b",  f"{p['b_m']*1000:.1f} mm",  f"{p['b_m']*1000/25.4:.2f} in"),
-            ("Nozzle arc  λ",    f"{math.degrees(p['lambda_rad']):.0f}°", "—"),
+            ("Nozzle width  b",     f"{p['b_m']*1000:.1f} mm",  f"{p['b_m']*1000/25.4:.2f} in"),
+            ("Nozzle entry arc  λ", "90°", "—"),
         ])
 
 
